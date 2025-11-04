@@ -67,3 +67,60 @@ WHERE
 			department_managers.emp_id = employees.emp_id
 	)
 ;
+
+
+-- SELECT절에서 사용
+-- 성능 상 이슈가 있어 많이 쓰이진 않는다
+-- 사원 별 역대 전체 급여 평균
+SELECT
+	emp.emp_id
+	,(
+		SELECT ROUND(AVG(sal.salary))
+		FROM salaries sal
+		WHERE emp.emp_id = sal.emp_id
+	) avg_sal
+FROM employees emp
+;
+
+
+-- FROM절에서 사용
+-- 동적으로 임시 테이블을 만들어 이용하기 위해 사용한다
+SELECT
+	tmp.*
+FROM (
+	SELECT 
+		emp.emp_id
+		,emp.`name`
+	FROM employees emp
+) tmp
+;
+
+
+-- INSERT문에서 사용
+INSERT INTO title_emps(
+	emp_id
+	,title_code
+	,start_at
+)
+VALUES(
+	(SELECT MAX(emp_id) FROM employees)	
+	,(SELECT title_code FROM titles WHERE title = '사원')
+	,DATE(NOW())
+);
+
+
+-- UPDATE문에서 사용
+-- 셀프 조인의 경우 약어+숫자/약어_sub 등으로 표기
+-- 보통은 약어+숫자를 사용하지만 팀 내의 규칙을 따른다
+-- UPDATE문에서는 서브쿼리를 사용한 셀프 조인이 안 됨
+UPDATE title_emps tite1
+SET
+	tite1.end_at = (
+		SELECT emp.fire_at
+		FROM employees emp
+		WHERE emp.emp_id = 100000
+	)
+WHERE
+	tite1.emp_id = 100000
+	AND tite1.end_at IS NULL
+;
